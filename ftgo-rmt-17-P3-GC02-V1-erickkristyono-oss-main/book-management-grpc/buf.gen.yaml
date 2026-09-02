@@ -1,0 +1,20 @@
+version: v1
+plugins:
+  # Message structs (*.pb.go)
+  - plugin: buf.build/protocolbuffers/go
+    out: pkg/genproto
+    opt: paths=source_relative
+  # gRPC server/client stubs (*_grpc.pb.go)
+  - plugin: buf.build/grpc/go
+    out: pkg/genproto
+    opt: paths=source_relative
+  # grpc-gateway reverse-proxy (REST -> gRPC) (*.pb.gw.go)
+  - plugin: buf.build/grpc-ecosystem/gateway
+    out: pkg/genproto
+    opt: paths=source_relative
+  # OpenAPI v2 (Swagger) documentation
+  - plugin: buf.build/grpc-ecosystem/openapiv2
+    out: docs/swagger
+    opt:
+      - allow_merge=true
+      - merge_file_name=openapi

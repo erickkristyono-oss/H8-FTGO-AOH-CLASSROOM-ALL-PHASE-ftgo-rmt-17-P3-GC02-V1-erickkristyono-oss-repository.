@@ -1,0 +1,215 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Book Management System API",
+    "version": "1.0",
+    "description": "REST API (via grpc-gateway) untuk Sistem Manajemen Buku dengan autentikasi JWT."
+  },
+  "schemes": ["http", "https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Masukkan: 'Bearer <token JWT>'"
+    }
+  },
+  "paths": {
+    "/v1/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Registrasi user baru (mengembalikan token)",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/RegisterRequest" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK", "schema": { "$ref": "#/definitions/AuthResponse" } }
+        }
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login & dapatkan token JWT",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/LoginRequest" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK", "schema": { "$ref": "#/definitions/AuthResponse" } }
+        }
+      }
+    },
+    "/v1/books": {
+      "get": {
+        "tags": ["Book"],
+        "summary": "Daftar buku (opsional filter status)",
+        "security": [{ "Bearer": [] }],
+        "parameters": [
+          { "name": "status", "in": "query", "type": "string", "description": "Available | Borrowed | Overdue" }
+        ],
+        "responses": {
+          "200": { "description": "OK", "schema": { "$ref": "#/definitions/ListBooksResponse" } }
+        }
+      },
+      "post": {
+        "tags": ["Book"],
+        "summary": "Tambah buku",
+        "security": [{ "Bearer": [] }],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/CreateBookRequest" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK", "schema": { "$ref": "#/definitions/Book" } }
+        }
+      }
+    },
+    "/v1/books/{id}": {
+      "get": {
+        "tags": ["Book"],
+        "summary": "Detail buku",
+        "security": [{ "Bearer": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": {
+          "200": { "description": "OK", "schema": { "$ref": "#/definitions/Book" } }
+        }
+      },
+      "put": {
+        "tags": ["Book"],
+        "summary": "Ubah buku (hanya pemilik)",
+        "security": [{ "Bearer": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/UpdateBookRequest" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK", "schema": { "$ref": "#/definitions/Book" } }
+        }
+      },
+      "delete": {
+        "tags": ["Book"],
+        "summary": "Hapus buku (hanya pemilik)",
+        "security": [{ "Bearer": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/v1/books/{book_id}/borrow": {
+      "post": {
+        "tags": ["Book"],
+        "summary": "Pinjam buku",
+        "security": [{ "Bearer": [] }],
+        "parameters": [
+          { "name": "book_id", "in": "path", "required": true, "type": "string" },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": { "duration_hours": { "type": "integer", "format": "int64" } }
+            }
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/v1/books/{book_id}/return": {
+      "post": {
+        "tags": ["Book"],
+        "summary": "Kembalikan buku",
+        "security": [{ "Bearer": [] }],
+        "parameters": [
+          { "name": "book_id", "in": "path", "required": true, "type": "string" },
+          { "name": "body", "in": "body", "required": true, "schema": { "type": "object" } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    }
+  },
+  "definitions": {
+    "RegisterRequest": {
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "password": { "type": "string" }
+      }
+    },
+    "LoginRequest": {
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "password": { "type": "string" }
+      }
+    },
+    "User": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" }
+      }
+    },
+    "AuthResponse": {
+      "type": "object",
+      "properties": {
+        "token": { "type": "string" },
+        "user": { "$ref": "#/definitions/User" }
+      }
+    },
+    "Book": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "published_date": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" },
+        "owner_id": { "type": "string" },
+        "user_id": { "type": "string" }
+      }
+    },
+    "CreateBookRequest": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "published_date": { "type": "string", "format": "date-time" }
+      }
+    },
+    "UpdateBookRequest": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "published_date": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ListBooksResponse": {
+      "type": "object",
+      "properties": {
+        "books": { "type": "array", "items": { "$ref": "#/definitions/Book" } }
+      }
+    }
+  }
+}

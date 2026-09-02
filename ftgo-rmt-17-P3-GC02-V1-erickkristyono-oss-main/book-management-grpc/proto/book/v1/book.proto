@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+package book.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/yourusername/book-management-grpc/pkg/genproto/book/v1;bookv1";
+
+// =============================================================================
+// AuthService — registrasi & login (menghasilkan JWT).
+// =============================================================================
+service AuthService {
+  rpc Register(RegisterRequest) returns (AuthResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/register"
+      body: "*"
+    };
+  }
+  rpc Login(LoginRequest) returns (AuthResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/login"
+      body: "*"
+    };
+  }
+}
+
+// =============================================================================
+// BookService — manajemen buku & peminjaman. SEMUA endpoint butuh JWT.
+// =============================================================================
+service BookService {
+  rpc CreateBook(CreateBookRequest) returns (Book) {
+    option (google.api.http) = {
+      post: "/v1/books"
+      body: "*"
+    };
+  }
+  rpc GetBook(GetBookRequest) returns (Book) {
+    option (google.api.http) = {get: "/v1/books/{id}"};
+  }
+  rpc ListBooks(ListBooksRequest) returns (ListBooksResponse) {
+    option (google.api.http) = {get: "/v1/books"};
+  }
+  rpc UpdateBook(UpdateBookRequest) returns (Book) {
+    option (google.api.http) = {
+      put: "/v1/books/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteBook(DeleteBookRequest) returns (DeleteBookResponse) {
+    option (google.api.http) = {delete: "/v1/books/{id}"};
+  }
+  rpc BorrowBook(BorrowBookRequest) returns (BorrowResponse) {
+    option (google.api.http) = {
+      post: "/v1/books/{book_id}/borrow"
+      body: "*"
+    };
+  }
+  rpc ReturnBook(ReturnBookRequest) returns (ReturnResponse) {
+    option (google.api.http) = {
+      post: "/v1/books/{book_id}/return"
+      body: "*"
+    };
+  }
+}
+
+// ------- Auth messages -------
+message User {
+  string id = 1;
+  string username = 2;
+}
+
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message AuthResponse {
+  string token = 1;
+  User user = 2;
+}
+
+// ------- Book messages -------
+message Book {
+  string id = 1;
+  string title = 2;
+  string author = 3;
+  google.protobuf.Timestamp published_date = 4;
+  string status = 5; // Available | Borrowed | Overdue
+  string owner_id = 6; // pemilik/penambah
+  string user_id = 7; // peminjam saat ini (kosong bila tidak dipinjam)
+}
+
+message CreateBookRequest {
+  string title = 1;
+  string author = 2;
+  google.protobuf.Timestamp published_date = 3;
+}
+
+message GetBookRequest {
+  string id = 1;
+}
+
+message ListBooksRequest {
+  string status = 1; // filter opsional: Available | Borrowed | Overdue
+}
+
+message ListBooksResponse {
+  repeated Book books = 1;
+}
+
+message UpdateBookRequest {
+  string id = 1;
+  string title = 2;
+  string author = 3;
+  google.protobuf.Timestamp published_date = 4;
+}
+
+message DeleteBookRequest {
+  string id = 1;
+}
+
+message DeleteBookResponse {
+  bool success = 1;
+}
+
+message BorrowBookRequest {
+  string book_id = 1;
+  int64 duration_hours = 2; // lama pinjam (jam); 0 = default 7 hari
+}
+
+message BorrowResponse {
+  string borrow_id = 1;
+  string book_id = 2;
+  google.protobuf.Timestamp due_date = 3;
+}
+
+message ReturnBookRequest {
+  string book_id = 1;
+}
+
+message ReturnResponse {
+  bool success = 1;
+}

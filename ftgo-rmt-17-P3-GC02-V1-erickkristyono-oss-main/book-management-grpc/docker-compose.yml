@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "50051:50051" # gRPC
+      - "8080:8080" # REST + Swagger
+    environment:
+      GRPC_PORT: "50051"
+      HTTP_PORT: "8080"
+      JWT_SECRET: "ubah-secret-ini-di-produksi"
+      JWT_TTL: "24h"
+      DB_DRIVER: "postgres"
+      DATABASE_URL: "host=db user=postgres password=postgres dbname=bookdb port=5432 sslmode=disable TimeZone=Asia/Jakarta"
+      SCHED_INTERVAL: "1h"
+      BORROW_DURATION: "168h"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bookdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
